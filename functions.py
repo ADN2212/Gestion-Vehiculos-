@@ -156,38 +156,6 @@ def add_dicts(dict1, dict2):
 
 	return dict_resultante	
 
-"""
-def add_data(request_data):
-
-	#Agrega el chofer y el vehiculo al diccionario de la request para posteriomente ser agregado al serialzador.	  
-
-	request_resultante = {}
-
-	id_chofer = request_data.get('id_chofer')
-	id_vehiculo = request_data.get('id_vehiculo')
-
-	if id_chofer:
-		chofer = do_query(Modelo = Chofer, ID = id_chofer)
-
-	if id_vehiculo:
-		vehiculo = do_query(Modelo = Vehiculo, ID = id_vehiculo)
-
-
-	if id_vehiculo and id_chofer:
-		if chofer and vehiculo:
-			request_resultante['chofer'] = ChoferSerializer(chofer).data#El Chofer en formato JSON
-			request_resultante['viaje'] = ViajeSerializer(viaje).data
-
-			request_resultante = add_dicts(request_data, request_resultante)
-			request_resultante.pop('id_chofer')
-			request_resultante.pop('id_vehiculo')
-
-			return request_resultante
-		
-	else:
-		return request_data#Esto significa que, o no contenia los ids o no eran validos.
-"""
-
 def calcular_costo(viaje):
 	"""
 	#Calcula el costo (en dolares) de un viaje espesifico en funcion de su duracion, la catidad de asientos que posee el vehiculo que lo hizo y la cantidad de kilometros recorridos
