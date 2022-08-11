@@ -1,4 +1,10 @@
 from django.core.exceptions import ObjectDoesNotExist
+from gestion_vehiculos_api.models import Chofer, Vehiculo
+from gestion_vehiculos_api.serializers import ChoferSerializer, VehiculoSerializer
+from datetime import datetime as dt
+#Para poder usarlo en otras funciones.
+formato = '%Y-%m-%dT%H:%M:%SZ'#Debo percatarme de que las fechas entren en este formato.
+
 
 def do_query(Modelo, ID = None, order_by_arg = None):
 	"""
@@ -66,6 +72,74 @@ def add_errors(request_data, object_type):
 		#Deberia permitirce que se cambien las placas?
 		#otros ...
 
+	if object_type == 'Viaje':
+		
+		#Para comporbar la validez de las fechas:
+		#Deberia fijar un tiempo minimo para todos los viajes?
+		inicio_viaje = request_data.get('inicio_viaje')#Estos son str que deben ser tansformdos a datetime objects.
+		fin_viaje = request_data.get('fin_viaje')#Python puede hacer operaciones de comparacion (>, <, >=, <=, ==, !=) con strs que hace que esto sea funcional sin necesidad de usar datetime.  
+		
+		if inicio_viaje and fin_viaje:
+			
+			iv = dt.strptime(inicio_viaje, formato)
+			fv = dt.strptime(fin_viaje, formato)
+
+			if iv >= fv:
+				errores['error_fechas'] = ['La fecha de inicio del viaje debe ser mayor que la del fin de este.']	
+ 	
+			else:
+				#Si iv >= fv no tiene sentido calcular la duracion del viaje.
+				#duracion = fv - iv
+				duracion_dias_decimales = (fv - iv).total_seconds()/(24*60*60)
+				if duracion_dias_decimales < (1/24):# 1/24 es el valor de una ura en dias.
+					errores['error_fechas'] = ['Un viaje debe durar como munimo una hora, por favor revise las fechas de inicio y finalización del viaje.']
+		else:
+			errores['error_fechas'] = ['Las campos de inicio y fin del viaje son obliagatorios.']
+
+		#Para comporbar que se hayan asignado un chofer y un vehiculo validos:
+		id_chofer = request_data.get('id_chofer')
+		id_vehiculo = request_data.get('id_vehiculo')
+
+		if id_chofer:
+			chofer = do_query(Modelo = Chofer, ID = id_chofer)
+			if not chofer:
+				errores['error_chofer'] = ['No existe chofer con id = {} en la Base de Datos.'.format(id_chofer)]
+
+			del chofer#Borrarlo ya que no será nesario en el resto de la ejecucion de la función.
+		
+		else:
+			errores['error_chofer'] = ['Para poder crear o editar un viaje un chofer debe ser asiganado.']
+
+		if id_vehiculo:
+			vehiculo = do_query(Modelo = Vehiculo, ID = id_vehiculo)
+			if not vehiculo:
+				errores['error_vehiculo'] = ['No existe vehiculo con id = {} en la Base de Datos.'.format(id_vehiculo)]
+
+			del vehiculo#Borrarlo ya que no será nesario en el resto de la ejecucion de la función.
+		
+		else:
+			errores['error_vehiculo'] = ['Para poder crear o editar un viaje un vehiculo debe ser asiganado.']
+
+		
+		#Comprovar que esten los demas campos:
+
+		tipo_viaje = request_data.get('tipo_viaje')
+		#comentarios = request_data.get('comentarios')#No es obligatorio poner cometarios. 
+		estado_viaje = request_data.get('estado_viaje')
+		kms_recorridos = request_data.get('kms_recorridos')
+
+		if not tipo_viaje:
+			errores['error_tipo_viaje'] = ['Debe especificar el tipo de viaje.']
+
+		if not estado_viaje:
+			errores['error_estado_viaje'] = ['Debe especificar el estado del viaje.']	
+
+		if not kms_recorridos:
+			errores['error_kms_recorridos'] = ['Debe especificar cuantos kilometros seran recorridos en el viaje.']
+
+
+		#otros errores con respecto a los viajes ...
+
 	return errores#Si no se cumple ninguna de las condiciones esto será {} = Flase.
 
 
@@ -82,6 +156,59 @@ def add_dicts(dict1, dict2):
 
 	return dict_resultante	
 
+"""
+def add_data(request_data):
+
+	#Agrega el chofer y el vehiculo al diccionario de la request para posteriomente ser agregado al serialzador.	  
+
+	request_resultante = {}
+
+	id_chofer = request_data.get('id_chofer')
+	id_vehiculo = request_data.get('id_vehiculo')
+
+	if id_chofer:
+		chofer = do_query(Modelo = Chofer, ID = id_chofer)
+
+	if id_vehiculo:
+		vehiculo = do_query(Modelo = Vehiculo, ID = id_vehiculo)
+
+
+	if id_vehiculo and id_chofer:
+		if chofer and vehiculo:
+			request_resultante['chofer'] = ChoferSerializer(chofer).data#El Chofer en formato JSON
+			request_resultante['viaje'] = ViajeSerializer(viaje).data
+
+			request_resultante = add_dicts(request_data, request_resultante)
+			request_resultante.pop('id_chofer')
+			request_resultante.pop('id_vehiculo')
+
+			return request_resultante
+		
+	else:
+		return request_data#Esto significa que, o no contenia los ids o no eran validos.
+"""
+
+def calcular_costo(viaje):
+	"""
+	#Calcula el costo (en dolares) de un viaje espesifico en funcion de su duracion, la catidad de asientos que posee el vehiculo que lo hizo y la cantidad de kilometros recorridos
+	#agrega 500 dolares en caso de que el servicio sea de tipo VIP.		  
+	"""
+
+	iv = dt.strptime(viaje.inicio_viaje, formato)#ver linea No.06
+	fv = dt.strptime(viaje.fin_viaje, formato)
+
+	duracion = fv - iv#Esto es un objeto del tipo datetime.
+
+	duracion = round(duracion.total_seconds()/(24*60*60), 3)
+
+	costo = (duracion * viaje.vehiculo.cantidad_asientos * 0.21) + (1.2 * viaje.kms_recorridos)
+
+	if viaje.vehiculo.tipo_servicio == "VIP":
+		costo += 500
+
+	costo = round(costo, 2)
+
+	return costo
 
 
 
