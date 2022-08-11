@@ -40,6 +40,12 @@ urlpatterns = [
 
     #URLs para viajes:
     path('get_viajes/<str:id>', get_viajes),
+    path('post_viaje', post_viaje),
+    path('put_viaje/<int:id>', put_viaje),
+    path('delete_viaje/<int:id>', delete_viaje),
+
+    #URLs para los usuarios:
+
 ]
 
 
