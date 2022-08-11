@@ -7,9 +7,9 @@ from gestion_vehiculos_api.serializers import * #Para poder mostrar la info.
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.request import Request
-from rest_framework.test import APIRequestFactory
-from gestion_vehiculos_api.functions import * 
+#from rest_framework.request import Request
+#from rest_framework.test import APIRequestFactory
+from gestion_vehiculos_api.functions import do_query, add_errors, add_dicts, calcular_costo 
 
 
 
@@ -267,29 +267,175 @@ def get_viajes(request, id):
 	Enpoint de la API que sirve para hacer SELECT = GET, de uno o varios viajes.
 	"""
 
-	#factory = APIRequestFactory()
-	#requestx = factory.get('/get_viajes')
-
-	#s_c = {'request': Request(requestx)}
-
 	if request.method == 'GET':		
 		
-		if id == 'all':		
-			viajes = do_query(Modelo = Viaje, order_by_arg = "-kms_recorridos")
-			"""
-			print('----------------------------------------------------')
-			for v in viajes:
-				print(v.chofer, v.vehiculo)
-			print('----------------------------------------------------')
-			"""
-			if viajes:
+		s_c = {'request': request}
 
+		if id == 'all':		
+			viajes = do_query(Modelo = Viaje, order_by_arg = "id_viaje")#Order_by_arg, tambien puede ser resivido en la URL como argumento
+						
+			if viajes:
+				"""
+				Si hago esto aqui estaré malgastondo potencia de computo.
+				#Actualizar el costo de cada viaje:
+					for v in viajes:
+						v.calcular_costo()
+				"""
 				s_c = {'request': request}#El contexto es requerido cuando hay claves foraneas 
 
 				return Response(ViajeSerializer(viajes, many = True, context = s_c).data)
 				#return Response('Hola')
 
 			return Response("No hay registros en la tabla de viajes", status = status.HTTP_404_NOT_FOUND)
+
+
+		if id.isdigit():
+
+			viaje = do_query(Modelo = Viaje, ID = int(id))
+
+			if viaje:
+				return Response(ViajeSerializer(viaje).data)#El context no es nesesario para un unico viaje?
+
+			return Response( {'error' : 'No hay ningun viaje con id = {}'.format(id)} )	
+
+
+@api_view(['POST'])
+@csrf_exempt
+def post_viaje(request):
+	"""
+	Endpoint de la API que sirve para ingresar datos en la tabla viajes de la BD, es decir, hacer INSERT = POST.
+	El JSON de la request debe contener los ids del chofer y el vehiculo.	 
+	"""
+	if request.method == 'POST':
+
+		post_data = request.data#Esto es un diccionario de python
+
+		errores = add_errors(request_data = post_data, object_type = 'Viaje')
+
+		#print(post_data)
+
+		viaje_serializado = ViajeSerializer(data = post_data, partial = True)#'partial' permite que el el serializer se haga con un JSON incompleto.
+
+		if viaje_serializado.is_valid() and not errores:
+
+			#viaje_serializado.save()
+
+			#llagados a este punto ninguna de estas dos debería retorna None
+			chofer = do_query(Modelo = Chofer, ID = request.data['id_chofer'])
+			vehiculo = do_query(Modelo = Vehiculo, ID = request.data['id_vehiculo'])
+
+			viaje =	Viaje(
+							tipo_viaje = request.data['tipo_viaje'],
+							inicio_viaje = request.data['inicio_viaje'],
+							fin_viaje = request.data['fin_viaje'],
+							costo_usd = 0,				
+							kms_recorridos = request.data['kms_recorridos'],
+							comentarios = request.data['comentarios'],
+							estado_viaje = request.data['estado_viaje'],
+							chofer = chofer,
+							vehiculo = vehiculo
+						)
+		
+			viaje.costo_usd = calcular_costo(viaje)
+
+			viaje.save()
+
+			return Response('El viaje fue creado exitosamente', status = status.HTTP_201_CREATED)
+		
+		errores = add_dicts(errores, viaje_serializado.errors)
+		
+		return Response(errores, status = status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['PUT', 'GET'])
+@csrf_exempt
+def put_viaje(request, id):
+	"""
+	Endponit de la API que sirve para hacer PUT = UPDATE a los viajes de la BD. 
+	El JSON de la request debe contener los ids del chofer y el vehiculo.
+	"""
+	viaje = do_query(Modelo = Viaje, ID = id)
+
+	if request.method == 'GET':
+
+		
+		if viaje:
+		#Para mostrar solo los ids del chofer y el vehiculo correspondientes al viaje. 
+			response = ViajeSerializer(viaje).data
+			response['id_chofer'] = response['chofer']['id_chofer'] if response.get('chofer') else None #En caso de que le chofer o el vaje hayan sido borrados.
+			response['id_vehiculo'] = response['vehiculo']['id_vehiculo'] if response.get('vehiculo') else None# el None de Python es null en JS.
+		#En este caso no estoy interesado en todos los datos del chofer y el vehiculo:
+			response.pop('chofer')
+			response.pop('vehiculo')
+		#Tampoco es nesesario mostrar el id:
+			response.pop("id_viaje")	
+
+			return Response(response)
+
+		else:
+			return Response({'error': 'No existe viaje con id = {}'.format(id)}, status = status.HTTP_404_NOT_FOUND)
+
+		#return Response(ViajeSerializer(viaje).data) if viaje else Response({'error': 'No existe viaje con id = {}'.format(id)}, status = status.HTTP_404_NOT_FOUND)
+
+	
+	if request.method == 'PUT':
+		
+
+		if viaje:
+			viaje_serializado = ViajeSerializer(viaje, data = request.data, partial = True)
+			errores = add_errors(request_data = request.data, object_type = 'Viaje')
+
+			if viaje_serializado.is_valid() and not errores:
+
+				#Asignar los valores actualizados al registro.
+				viaje.tipo_viaje = request.data['tipo_viaje']
+				viaje.inicio_viaje = request.data['inicio_viaje']				
+				viaje.fin_viaje = request.data['fin_viaje']
+				viaje.kms_recorridos = request.data['kms_recorridos']
+				viaje.comentarios = request.data.get('comentarios') if request.data.get('comentarios') else "..."
+				viaje.estado_viaje = request.data['estado_viaje']
+				viaje.chofer = do_query(Modelo = Chofer, ID = request.data['id_chofer'])
+				viaje.vehiculo = do_query(Modelo = Vehiculo, ID = request.data['id_vehiculo'])
+				#Luego de que los campos sean actualizados se puede re-caulcular el costo del vaije.
+				viaje.costo_usd = calcular_costo(viaje)#Actualizar el costo del viaje.
+
+				viaje.save()
+
+				return Response('El viaje de id = {}  ha sido actualizado exitosamente'.format(id))
+
+		#return Response(" Wait a ")
+
+			else:
+				errores = add_dicts(errores, viaje_serializado.errors)
+				return Response(errores, status = status.HTTP_400_BAD_REQUEST)
+
+		else:
+			return Response({'error': 'No existe viaje con id = {}'.format(id)}, status = status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET', 'DELETE'])
+@csrf_exempt
+def delete_viaje(request, id):
+	
+	"""
+	Endpoint de la API que servirá para borrar (DELETE = DELETE) un viaje. 
+	"""
+	
+	viaje = do_query(Modelo = Viaje, ID = id)
+
+	if request.method == 'GET':
+
+		return Response(ViajeSerializer(viaje).data) if viaje else Response({'error': 'No existe viaje con id = {} en esta Base de Datos'.format(id)}, status = status.HTTP_404_NOT_FOUND)
+
+	if request.method == 'DELETE':
+		
+		if viaje:
+			viaje.delete()
+			return Response('El viaje de id = {} y tipo {} ha sido eliminado exitosamente'.format(id, viaje.tipo_viaje))
+
+		return Response('No se ha encontado viaje con id = {}'.format(id), status = status.HTTP_404_NOT_FOUND)
+
 
 
 
