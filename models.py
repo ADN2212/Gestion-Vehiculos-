@@ -55,6 +55,7 @@ class Vehiculo(models.Model):
 class DatosPersona(models.Model):
 	"""
 	Clase para aplicar herencia obstracta a las tablas Chofer y GVUser
+	Esta tabla no será nesesaria a futuro, dado que GVUser no 'estara'
 	"""	
 	nombre_completo = models.CharField(default = '', max_length = 100, verbose_name = 'Nombre Completo')
 	
@@ -150,49 +151,19 @@ class Viaje(models.Model):
 	estado_viaje = models.CharField(default = 'Creado', max_length = 10, choices = ESTADOS_DE_VIAJE, verbose_name = 'Estado del Viaje')
 
 	costo_usd = models.DecimalField(max_digits = 7, decimal_places = 2, default = 0, verbose_name = 'Costo del viaje en USD$')#No mostrar este campo al user cuendo se este creando el viaje.
-	
-	def calcular_costo(self):
-		"""
-		Calcula el costo (en dolares) de un viaje espesifico en funcion de su duracion, la catidad de asientos que posee el vehiculo que lo hizo y la cantidad de kilometros recorridos
-		agrega 500 dolares en caso de que el servicio sea de tipo VIP.  
-		"""
-		#Pasos:
-
-		#1-Calcular la duracion del viaje:
-		duracion_viaje = self.fin_viaje - self.inicio_viaje#resulta un objeto del tipo deltatime.
-
-		#2-Transformarla en dias decimales con tres cifras decimales:
-		duracion_viaje = round(duracion_viaje.total_seconds()/(24*60*60), 3)
-
-		#3-Calcular el costo:
-
-		costo = (duracion_viaje * self.vehiculo.cantidad_asientos * 0.21) + (1.2 * self.kms_recorridos)
-
-		if self.vehiculo.tipo_servicio == 'VIP':
-			costo += 500
-
-		costo = round(costo, 2)
-
-		#4-Asignar este valor al campo costo_viaje y guardar:
-		self.costo_usd = costo
-		self.save()#self = viaje.
-
-		return "{} USD$".format(costo)
-
-
+		
 	class Meta:
-		db_table = 'Viajes'#Este bombre será asiganado a la tabla.
+		db_table = 'Viajes'#Este nombre será asiganado a la tabla.
 
 	def __str__(self):
 		return 'Viaje de tipo {}'.format(self.tipo_viaje)
 
-
+"""
 class GVUser(DatosPersona):
 	
-	"""
-	Esta clase modela la tabla de los usuarios
-	Debería estar conectada a Chofer, Viaje y Vehiculo por medio de su pk? 	
-	"""
+	#Esta clase modela la tabla de los usuarios
+	#Debería estar conectada a Chofer, Viaje y Vehiculo por medio de su pk?
+	#Hay una manera de agregar campos extras a la tabla User que django trae por defecto. 	
 
 	user_id = models.AutoField(primary_key = True)
 
@@ -204,6 +175,7 @@ class GVUser(DatosPersona):
 
 	rol = models.CharField(max_length = 13, choices = ROLES, verbose_name = 'Eliga el Rol de este Usuario')
 
+	#Agregar contraseña ...
 
 	class Meta:
 		db_table = 'Usuarios Gestión Vehiculos'
@@ -211,7 +183,8 @@ class GVUser(DatosPersona):
 	def __str__(self):
 		return 'User: {}, Rol: {}'.format(self.nombre_completo, self.rol)
 
-		
+"""		
+
 
 
 
