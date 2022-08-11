@@ -39,16 +39,19 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'gestion_vehiculos_api',
     'rest_framework',
+    'corsheaders',
 ]
 
-MIDDLEWARE = [
+MIDDLEWARE = [   
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
 ]
 
 ROOT_URLCONF = 'Sistema_Gestion_Vehiculos.urls'
@@ -108,7 +111,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'en-us'#Pendiente cambiar a español para ver si los mesajes de los serializers cambian de idioma.
  
 TIME_ZONE = 'UTC'
 
@@ -136,6 +139,13 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',#Permite que users no autenticados pueda hacer peticiones a la API.
     ]
 }
+
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8000',
+]
+
+CORS_ORIGIN_ALLOW_ALL = True#Si esta variable no está asiganada el frontEnd lanzara el error de las cors. 
 
 
 
