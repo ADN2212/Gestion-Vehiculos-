@@ -1,4 +1,4 @@
-from gestion_vehiculos_api.models import Chofer, Vehiculo, Viaje, GVUser
+from gestion_vehiculos_api.models import Chofer, Vehiculo, Viaje#, GVUser
 from rest_framework import serializers
 
 """
@@ -56,7 +56,7 @@ class ViajeSerializer(serializers.HyperlinkedModelSerializer):
 
 		fields =	['id_viaje', 'tipo_viaje', 'inicio_viaje', 'fin_viaje', 'costo_usd', 'kms_recorridos', 'comentarios', 'estado_viaje', 'chofer', 'vehiculo']
 
-
+"""
 class GVUserSerializer(serializers.HyperlinkedModelSerializer):
 	class Meta:
 		model = GVUser
@@ -64,9 +64,7 @@ class GVUserSerializer(serializers.HyperlinkedModelSerializer):
 						'numero_telefono', 'direccion_particular',
 						'email'
 					]
-
-
-
+"""
 
 
 
