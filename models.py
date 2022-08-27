@@ -27,6 +27,8 @@ class Vehiculo(models.Model):
 	
 	agnos_explotacion = models.PositiveSmallIntegerField(default = 0, null = True, verbose_name = 'Años de Explotación') 
 	
+	cantidad_viajes = models.PositiveSmallIntegerField(default = 0, null = True, verbose_name = 'Cantidad de Vaijes Realizados')
+
 	SERVICIOS = (
 					('Regular', 'Regular'),
 					('Especial', 'Especial'),
@@ -67,8 +69,8 @@ class DatosPersona(models.Model):
 	
 	direccion_particular = models.CharField(default = 'Somewhere', max_length = 150, verbose_name = 'Reside en')
 	
-	email = models.EmailField(default = 'SomeOne@gamil.com', null = True, blank = True)#Este campo verifica que sea un email valido, en caso de que no, lanza un error.
-	#Email deberia ser unico?
+	email = models.EmailField(default = 'SomeOne@gamil.com', null = True, blank = True, unique = True)#Este campo verifica que sea un email valido, en caso de que no, lanza un error.
+	#Email deberia ser unico? si
 
 	class Meta:
 		abstract = True
@@ -98,6 +100,8 @@ class Chofer(DatosPersona):
 	agnos_experiencia = models.PositiveSmallIntegerField(default = 0, verbose_name = 'Cuantos años de experiencia tiene?')
 
 	cantidad_de_multas = models.PositiveSmallIntegerField(default = 0, verbose_name = 'Cantidad de Multas')
+
+	cantidad_viajes = models.PositiveSmallIntegerField(default = 0, null = True, verbose_name = 'Cantidad de Vaijes Realizados')
 
 	CLASIFICACIONES =	(
 							('A', 'A'),
@@ -134,7 +138,7 @@ class Viaje(models.Model):
 
 	fin_viaje = models.DateTimeField(default = None, verbose_name = 'Fin del Viaje')
 
-	kms_recorridos = kms_recorridos = models.PositiveIntegerField(default = 0, verbose_name = 'Kilometros Recorridos en el Viaje')
+	kms_recorridos = models.PositiveIntegerField(default = 0, verbose_name = 'Kilometros Recorridos en el Viaje')
 
 	comentarios = models.TextField(default = '...', verbose_name = 'Haga un Comentario')
 
@@ -184,7 +188,6 @@ class GVUser(DatosPersona):
 		return 'User: {}, Rol: {}'.format(self.nombre_completo, self.rol)
 
 """		
-
 
 
 
