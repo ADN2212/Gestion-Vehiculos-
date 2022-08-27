@@ -16,7 +16,7 @@ class ChoferSerializer(serializers.HyperlinkedModelSerializer):
 		fields =	['id_chofer', 'nombre_completo', 'edad', 'cedula',
         			'numero_telefono', 'direccion_particular', 'email',
         			'nivel_escolar', 'sexo', 'agnos_experiencia', 
-        			'cantidad_de_multas', 'clasificacion']
+        			'cantidad_de_multas', 'clasificacion', 'cantidad_viajes']
 
     #Si ejecuto este metdo antes de usar .save() optendré un AssertionError. 
 	"""
@@ -30,7 +30,7 @@ class VehiculoSerializer(serializers.HyperlinkedModelSerializer):
         fields =	[	'id_vehiculo', 'placa', 'marca', 
         				'peso_en_toneladas', 'tipo_de_comnustible', 'kms_recorridos',
         				'velocidad_maxima', 'agnos_explotacion', 'tipo_servicio',
-        				'climatizacion', 'cantidad_asientos', 'disponibilidad',
+        				'climatizacion', 'cantidad_asientos', 'disponibilidad', 'cantidad_viajes'
         			]
         
         #fields = '__all__'
@@ -40,21 +40,14 @@ class ViajeSerializer(serializers.HyperlinkedModelSerializer):
 	chofer = ChoferSerializer()
 	vehiculo = VehiculoSerializer()
 
-	#print(chofer)
-
-
 	class Meta:
 		model = Viaje
-		"""
-		fields =	[	'id_viaje', 'tipo_viaje', 'inicio_viaje', 
-						'fin_viaje', 'costo_usd', 'kms_recorridos',
-						'comentarios', 'vehiculo', 'chofer',
-						'estado_viaje',
+		fields =	[	
+						'id_viaje', 'tipo_viaje', 'inicio_viaje', 
+						'fin_viaje', 'costo_usd', 'kms_recorridos', 
+						'comentarios', 'estado_viaje', 'chofer', 
+						'vehiculo'
 					]
-		"""	
-		#fields = '__all__'
-
-		fields =	['id_viaje', 'tipo_viaje', 'inicio_viaje', 'fin_viaje', 'costo_usd', 'kms_recorridos', 'comentarios', 'estado_viaje', 'chofer', 'vehiculo']
 
 """
 class GVUserSerializer(serializers.HyperlinkedModelSerializer):
@@ -65,9 +58,6 @@ class GVUserSerializer(serializers.HyperlinkedModelSerializer):
 						'email'
 					]
 """
-
-
-
 
 
 

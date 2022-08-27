@@ -5,7 +5,6 @@ from datetime import datetime as dt
 #Para poder usarlo en otras funciones.
 formato = '%Y-%m-%dT%H:%M:%SZ'#Debo percatarme de que las fechas entren en este formato.
 
-
 def do_query(Modelo, ID = None, order_by_arg = None):
 	"""
 	Esta funcion se encarga de hacer las querys a la BD atrevez de los modelos y retornar los Datos conseguidos. 
@@ -80,22 +79,27 @@ def add_errors(request_data, object_type):
 		fin_viaje = request_data.get('fin_viaje')#Python puede hacer operaciones de comparacion (>, <, >=, <=, ==, !=) con strs que hace que esto sea funcional sin necesidad de usar datetime.  
 		
 		if inicio_viaje and fin_viaje:
-			
-			iv = dt.strptime(inicio_viaje, formato)
-			fv = dt.strptime(fin_viaje, formato)
+		
+			try:
+				iv = dt.strptime(inicio_viaje, formato)
+				fv = dt.strptime(fin_viaje, formato)		
 
-			if iv >= fv:
-				errores['error_fechas'] = ['La fecha de inicio del viaje debe ser mayor que la del fin de este.']	
+				if iv >= fv:
+					errores['error_fechas'] = ['La fecha de inicio del viaje debe ser mayor que la del fin de este.']	
  	
-			else:
-				#Si iv >= fv no tiene sentido calcular la duracion del viaje.
-				#duracion = fv - iv
-				duracion_dias_decimales = (fv - iv).total_seconds()/(24*60*60)
-				if duracion_dias_decimales < (1/24):# 1/24 es el valor de una ura en dias.
-					errores['error_fechas'] = ['Un viaje debe durar como munimo una hora, por favor revise las fechas de inicio y finalización del viaje.']
+				else:
+					#Si iv >= fv no tiene sentido calcular la duracion del viaje.
+					#duracion = fv - iv
+					duracion_dias_decimales = (fv - iv).total_seconds()/(24*60*60)
+					if duracion_dias_decimales < (1/24):# 1/24 es el valor de una ura en dias.
+						errores['error_fechas'] = ['Un viaje debe durar como munimo una hora, por favor revise las fechas de inicio y finalización del viaje.']
+			
+			except ValueError:
+				errores['error_fechas'] = ['Las fechas deben ser ingresadas con el siguiente formato: %Y-%m-%dT%H:%M:%SZ']
+
 		else:
 			errores['error_fechas'] = ['Las campos de inicio y fin del viaje son obliagatorios.']
-
+		
 		#Para comporbar que se hayan asignado un chofer y un vehiculo validos:
 		id_chofer = request_data.get('id_chofer')
 		id_vehiculo = request_data.get('id_vehiculo')
@@ -156,6 +160,38 @@ def add_dicts(dict1, dict2):
 
 	return dict_resultante	
 
+"""
+def add_data(request_data):
+
+	#Agrega el chofer y el vehiculo al diccionario de la request para posteriomente ser agregado al serialzador.	  
+
+	request_resultante = {}
+
+	id_chofer = request_data.get('id_chofer')
+	id_vehiculo = request_data.get('id_vehiculo')
+
+	if id_chofer:
+		chofer = do_query(Modelo = Chofer, ID = id_chofer)
+
+	if id_vehiculo:
+		vehiculo = do_query(Modelo = Vehiculo, ID = id_vehiculo)
+
+
+	if id_vehiculo and id_chofer:
+		if chofer and vehiculo:
+			request_resultante['chofer'] = ChoferSerializer(chofer).data#El Chofer en formato JSON
+			request_resultante['viaje'] = ViajeSerializer(viaje).data
+
+			request_resultante = add_dicts(request_data, request_resultante)
+			request_resultante.pop('id_chofer')
+			request_resultante.pop('id_vehiculo')
+
+			return request_resultante
+		
+	else:
+		return request_data#Esto significa que, o no contenia los ids o no eran validos.
+"""
+
 def calcular_costo(viaje):
 	"""
 	#Calcula el costo (en dolares) de un viaje espesifico en funcion de su duracion, la catidad de asientos que posee el vehiculo que lo hizo y la cantidad de kilometros recorridos
@@ -177,6 +213,9 @@ def calcular_costo(viaje):
 	costo = round(costo, 2)
 
 	return costo
+
+
+
 
 
 

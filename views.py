@@ -1,7 +1,7 @@
 #from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from gestion_vehiculos_api.models import *
-from django.views.decorators.csrf import csrf_exempt#Evita la proteccion a las CSRF. 
+from django.views.decorators.csrf import csrf_exempt#Evita la protección a las CSRF. 
 #from rest_framework.parsers import JSONParser
 from gestion_vehiculos_api.serializers import * #Para poder mostrar la info.
 from rest_framework.decorators import api_view
@@ -11,7 +11,37 @@ from rest_framework import status
 #from rest_framework.test import APIRequestFactory
 from gestion_vehiculos_api.functions import do_query, add_errors, add_dicts, calcular_costo 
 
+#-------------------------------------------------------------------------EndPoint Que Muestra el Menú de la API-------------------------------------------------------------------------
 
+@api_view(['GET'])
+@csrf_exempt
+def api_menu(request):
+	"""
+	Envia un JSON con informacion sobre las funcionalidades de la API.
+	"""
+	if request.method == 'GET':
+		
+		api_info = {
+		
+		'Lista de Opciones' : 'Ver siguientes...',
+		'get_choferes/<str:id>' : 'Retorna el chofer con el id espesificado, o todos si se agrega "all" como argumento.',
+    	'post_chofer' : 'Permite agregar un nuevo chofer',
+    	'put_chofer/<int:id>': 'Permite actualizar el chofer al que pertenece el id que se pasa como argumento.',
+    	'delete_chofer/<int:id>' : 'Permite borrar el chofer al que pertenece el id que se pasa como argumento.',
+ 		'hr' : '--------------------------------------------------------------------------------------------------------',
+		'get_vehiculos/<str:id>' : 'Retorna el vehiculo con el id espesificado, o todos si se agrega "all" como argumento.',
+    	'post_vehiculo' : 'Permite agregar un nuevo vehiculo',
+    	'put_vehiculo/<int:id>': 'Permite actualizar el vehiculo al que pertenece el id que se pasa como argumento.',
+    	'delete_vehiculo/<int:id>' : 'Permite borrar el vehiculo al que pertenece el id que se pasa como argumento.',    	 
+    	'hr2' : '--------------------------------------------------------------------------------------------------------',
+		'get_viajes/<str:id>' : 'Retorna el viaje con el id espesificado, o todos si se agrega "all" como argumento.',
+    	'post_viaje' : 'Permite agregar un nuevo viaje',
+    	'put_viaje/<int:id>': 'Permite actualizar el viaje al que pertenece el id que se pasa como argumento.',
+    	'delete_viaje/<int:id>' : 'Permite borrar el viaje al que pertenece el id que se pasa como argumento.',
+    	
+    	}
+		
+		return Response(api_info)
 
 
 #---------------------------------------------------------------------EndPoints Chofer----------------------------------------------------------------------------------------------------
@@ -27,7 +57,7 @@ def  get_choferes(request, id):
 
 		if id == 'all':
 		
-			choferes = do_query(Modelo = Chofer, order_by_arg = "-edad")
+			choferes = do_query(Modelo = Chofer, order_by_arg = "-id_chofer")
 
 			if choferes:
 				return Response(ChoferSerializer(choferes, many = True).data)
@@ -155,7 +185,7 @@ def  get_vehiculos(request, id):
 
 		if id == 'all':
 		
-			vehiculos = do_query(Modelo = Vehiculo, order_by_arg = "peso_en_toneladas")
+			vehiculos = do_query(Modelo = Vehiculo, order_by_arg = "-id_vehiculo");
 
 			if vehiculos:
 				return Response(VehiculoSerializer(vehiculos, many = True).data)
@@ -272,7 +302,7 @@ def get_viajes(request, id):
 		s_c = {'request': request}
 
 		if id == 'all':		
-			viajes = do_query(Modelo = Viaje, order_by_arg = "id_viaje")#Order_by_arg, tambien puede ser resivido en la URL como argumento
+			viajes = do_query(Modelo = Viaje, order_by_arg = "-id_viaje")#Order_by_arg, tambien puede ser resivido en la URL como argumento
 						
 			if viajes:
 				"""
@@ -316,13 +346,16 @@ def post_viaje(request):
 
 		viaje_serializado = ViajeSerializer(data = post_data, partial = True)#'partial' permite que el el serializer se haga con un JSON incompleto.
 
+		#partial = True
+		#print(viaje_serializado);
+
 		if viaje_serializado.is_valid() and not errores:
 
 			#viaje_serializado.save()
 
 			#llagados a este punto ninguna de estas dos debería retorna None
-			chofer = do_query(Modelo = Chofer, ID = request.data['id_chofer'])
-			vehiculo = do_query(Modelo = Vehiculo, ID = request.data['id_vehiculo'])
+			chofer = do_query(Modelo = Chofer, ID = request.data['chofer']['id_chofer'])
+			vehiculo = do_query(Modelo = Vehiculo, ID = request.data['vehiculo']['id_vehiculo'])
 
 			viaje =	Viaje(
 							tipo_viaje = request.data['tipo_viaje'],
@@ -435,13 +468,6 @@ def delete_viaje(request, id):
 			return Response('El viaje de id = {} y tipo {} ha sido eliminado exitosamente'.format(id, viaje.tipo_viaje))
 
 		return Response('No se ha encontado viaje con id = {}'.format(id), status = status.HTTP_404_NOT_FOUND)
-
-
-
-
-
-
-
 
 
 
