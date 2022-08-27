@@ -25,7 +25,7 @@ urlpatterns = [
 
     path('admin/', admin.site.urls),  
     path('api/', include('rest_framework.urls', namespace='rest_framework')),
-    
+    path('api_menu', api_menu),
     #URLs para choferes:
     path('get_choferes/<str:id>', get_choferes),
     path('post_chofer', post_chofer),
@@ -47,7 +47,6 @@ urlpatterns = [
     #URLs para los usuarios:
 
 ]
-
 
 
 
